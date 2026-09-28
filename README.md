@@ -1,6 +1,6 @@
 # Home SOC Lab Portfolio — Phases 1–8
 
-A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Wazuh SIEM, Suricata IDS, Docker, Ubuntu VM, and a Windows 11 host). Each phase moves from basic vulnerability assessment through to full packet-level analysis, with every finding investigated, verified, and — where needed — remediated.
+A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Wazuh SIEM, Suricata IDS, Docker, Ubuntu VM, and a Windows 11 host). Each phase moves from basic vulnerability assessment through to full packet-level analysis, with every finding investigated, verified, and where needed remediated.
 
 **Full narrative write-up with findings:** see `Home_SOC_Lab_Portfolio.pdf` in this repo.
 
@@ -32,7 +32,7 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | `sudo systemctl restart ssh` | Applies the new SSH configuration |
 | `ssh vboxuser@192.168.100.20` | Live test to confirm key-only login works and password auth is rejected |
 
-**Key finding:** CVE-2026-60002 (OpenSSH client use-after-free, CVSS 9.4) — no vendor patch available at time of assessment. Mitigated via subnet-restricted firewall access and key-only SSH authentication.
+**Key finding:** CVE-2026-60002 (OpenSSH client use-after-free, CVSS 9.4) no vendor patch available at time of assessment. Mitigated via subnet-restricted firewall access and key-only SSH authentication.
 
 ---
 
@@ -65,7 +65,7 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | Dashboard query: `data.dest_port:6200` | Checks for traffic on the vsftpd backdoor's known shell port |
 | Dashboard query: `agent.name:jayy and location:"/var/log/auth.log"` | Confirms auth.log events are now flowing into Wazuh after the fix |
 
-**Key finding:** Discovered and fixed a major SIEM coverage gap — `/var/log/auth.log` had never been configured as a monitored source, meaning SSH/sudo activity was invisible to Wazuh throughout Phases 1–2. Also investigated a Suricata alert for a known vsftpd 2.3.4 backdoor signature; confirmed outbound-only traffic with no evidence of actual backdoor shell access.
+**Key finding:** Discovered and fixed a major SIEM coverage gap — `/var/log/auth.log` had never been configured as a monitored source, meaning SSH/sudo activity was invisible to Wazuh throughout Phases 1–2. Also investigated a Suricata alert for a known vsftpd 2.3.4 backdoor signature; confirmed outbound only traffic with no evidence of actual backdoor shell access.
 
 ---
 
@@ -82,13 +82,13 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | `sudo grep "AllowUsers" /etc/ssh/sshd_config` | Verifies SSH access is still restricted to the intended user |
 | `sudo systemctl status ssh wazuh-agent --no-pager` | Confirms both services are healthy post-incident |
 
-**Key finding:** The simulated brute-force was fully blocked by Phase 1's SSH hardening (zero successful logins), but never triggered a Wazuh alert — traced to intermittent agent connectivity and a historical event-queue overflow warning. Documented as an open, honestly-inconclusive detection reliability risk.
+**Key finding:** The simulated brute-force was fully blocked by Phase 1's SSH hardening (zero successful logins), but never triggered a Wazuh alert traced to intermittent agent connectivity and a historical event-queue overflow warning. Documented as an open, honestly inconclusive detection reliability risk.
 
 ---
 
 ## Phase 5 — Local Security Audit (Windows 11)
 
-*Adapted from Active Directory Security, since Windows 11 cannot host AD Domain Services — scoped to local account/policy auditing instead.*
+*Adapted from Active Directory Security, since Windows 11 cannot host AD Domain Services scoped to local account/policy auditing instead.*
 
 | Command | What it does |
 |---|---|
@@ -100,7 +100,7 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | `net accounts /uniquepw:5` | Increases enforced password history from 2 to 5 |
 | `Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4625} -MaxEvents 20 \| Format-List TimeCreated, Message` | Retrieves full detail on failed logon events (Event ID 4625) |
 
-**Key finding:** Found and disabled an enabled local account (`User1`) with no password required. Strengthened password history policy. Reviewed Security event log failed logons — both explained as benign, self-originated events.
+**Key finding:** Found and disabled an enabled local account (`User1`) with no password required. Strengthened password history policy. Reviewed Security event log failed logons both explained as benign, self-originated events.
 
 ---
 
@@ -114,7 +114,7 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | `sudo ss -tulpn \| grep -v 127.0.0.1` | Lists all listening network ports excluding localhost-only services |
 | `sudo find / -mmin -60 -type f -not -path "/proc/*" -not -path "/sys/*" -not -path "/var/lib/docker/*" -not -path "/var/log/*"` | Searches for any file modified in the last 60 minutes outside expected noisy paths |
 
-**Key finding:** Investigated Wazuh processes appearing to run under the `dnsmasq` user; confirmed via UID/shell lookup (`nologin` shell, standard low system UID) that this is a benign Docker UID-mapping artifact, not a compromise. Network listeners and recent file activity both came back fully explained — a clean hunt across all three angles.
+**Key finding:** Investigated Wazuh processes appearing to run under the `dnsmasq` user; confirmed via UID/shell lookup (`nologin` shell, standard low system UID) that this is a benign Docker UID mapping artifact, not a compromise. Network listeners and recent file activity both came back fully explained a clean hunt across all three angles.
 
 ---
 
@@ -132,12 +132,12 @@ A hands-on cybersecurity portfolio built on top of an existing home SOC lab (Waz
 | `passwd` | Changes the account password after it was exposed during the demonstration |
 | `sudo systemctl disable --now telnet.socket` / `sudo systemctl stop inetutils-inetd` / `sudo systemctl disable inetutils-inetd` | Fully disables the insecure Telnet service after the demonstration |
 
-**Key finding:** Captured and reconstructed a live Telnet login session, recovering the username and password in cleartext — direct proof of why the Phase 1 SSH key-only hardening matters. Telnet service disabled immediately after.
+**Key finding:** Captured and reconstructed a live Telnet login session, recovering the username and password in cleartext direct proof of why the Phase 1 SSH key-only hardening matters. Telnet service disabled immediately after.
 
 ---
 
 ## Phase 8 — Final Capstone
 
-Ties all seven phases into one connected investigation narrative rather than isolated exercises — see the executive summary in `Home_SOC_Lab_Portfolio.pdf` for the full write-up.
+Ties all seven phases into one connected investigation narrative rather than isolated exercises see the executive summary in `Home_SOC_Lab_Portfolio.pdf` for the full write-up.
 
-**What this project demonstrates:** methodical investigation, verifying findings with evidence rather than assumption, honestly documenting inconclusive results, and closing the loop by remediating what was found — across vulnerability assessment, log analysis, SIEM operations, incident response, local security auditing, threat hunting, and packet analysis.
+**What this project demonstrates:** methodical investigation, verifying findings with evidence rather than assumption, honestly documenting inconclusive results, and closing the loop by remediating what was found across vulnerability assessment, log analysis, SIEM operations, incident response, local security auditing, threat hunting, and packet analysis.
